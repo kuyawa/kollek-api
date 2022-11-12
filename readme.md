@@ -1,6 +1,10 @@
 # KOLLEK-API
 ## API to mint, claim, verify and lookup NFTs
 
+For the running app check https://kollek.me/
+
+For the UI source check https://github.com/kuyawa/kollek
+
 ## Instructions
 
 Clone the repo and install all the modules first
