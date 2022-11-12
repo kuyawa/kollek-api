@@ -59,7 +59,7 @@ let tokenId = await kollek.mintNFT(event)
 console.log('TokenId:', tokenId)
 ```
 
-### Mint an NFT for an account, destin must set NFTokenMinter
+### Mint an NFT for an account, receiver must set NFTokenMinter
 
 ```js
 let tokenId = await kollek.mintNFT(event, account)
@@ -94,3 +94,8 @@ let list = await kollek.lookupNFT(eventId)
 console.log('Accounts', list)
 ```
 
+Check the source of [kollek-api](https://github.com/kuyawa/kollek-api/blob/main/kollek-api.js)
+
+TODO:
+
+- Account lookup for same NFT
