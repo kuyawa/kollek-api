@@ -98,6 +98,6 @@ Check the source of [kollek-api](https://github.com/kuyawa/kollek-api/blob/main/
 
 TODO:
 
-[x] Stage #1 COMPLETED Minting and distribution
-[ ] Stage #2 PENDING Attendees lookup
-[x] Stage #3 COMPLETED Ownership verification
+- [x] Stage #1 COMPLETED Minting and distribution
+- [ ] Stage #2 PENDING Attendees lookup
+- [x] Stage #3 COMPLETED Ownership verification
