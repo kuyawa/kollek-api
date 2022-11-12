@@ -1,0 +1,17 @@
+{
+  "name": "kollek",
+  "version": "1.0.0",
+  "description": "Kollek API",
+  "main": "api.js",
+  "scripts": {
+    "test": "node tests"
+  },
+  "author": "kuyawa",
+  "license": "ISC",
+  "dependencies": {
+    "assert": "^2.0.0",
+    "node-fetch": "^3.2.10",
+    "verify-xrpl-signature": "^0.4.1",
+    "xrpl": "^2.5.0"
+  }
+}

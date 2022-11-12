@@ -1,0 +1,362 @@
+// API
+
+const fetch  = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const xrpl   = require('xrpl')
+const verify = require('verify-xrpl-signature').verifySignature
+
+const config = {
+    network: 'wss://xls20-sandbox.rippletest.net:51233',
+    netrpc:  'https://xls20-sandbox.rippletest.net:51234'
+}
+
+class Kollek {
+    constructor(key){
+        if(!key){ throw 'Minter key is required'; return; }
+        this.minterKey = key
+    }
+
+    // Mints event master ticket and all tickets
+    // If issuer is provided, will mint ticket for that account
+    // Issuer must approve minter beforehand
+    // Event info is required, at least id, name, date and uri
+    async mintNFT(event, issuer){
+        if(!event.eventid){ throw 'Event ID is required' }
+        if(!event.name){ throw 'Event name is required' }
+        if(!event.startdate){ throw 'Event date is required' }
+        if(!event.uri){ throw 'Event URI is required' }
+        console.log('Minting NFT...')
+        let tokenId = null
+        let client  = null
+        try {
+            let wallet = xrpl.Wallet.fromSeed(this.minterKey)
+            client = new xrpl.Client(config.network)
+            await client.connect()
+            let hexUri = xrpl.convertStringToHex(event.uri)
+            let memos = Utils.parseMemo(event)
+            let tx = {
+                TransactionType: 'NFTokenMint',
+                Account:         wallet.classicAddress,
+                URI:             hexUri,
+                Flags:           11,                      // burnable, resellable, transferable
+                Fee:             '12',                    // drops per tx
+                NFTokenTaxon:    parseInt(event.eventid), // group all event tickets
+                Memos:           memos
+            }
+            if(issuer){ tx.Issuer = issuer }
+            let info = await client.submitAndWait(tx,{wallet})
+            console.log('Result:', info?.result?.meta?.TransactionResult)
+            if(info?.result?.meta?.TransactionResult=='tesSUCCESS'){
+                tokenId = Utils.parseTokenId(info)
+            } else {
+                throw 'Error minting NFT'
+            }
+        } catch(ex) {
+            console.error(ex)
+            throw ex.message
+        } finally {
+            client?.disconnect()
+        }
+        return tokenId
+    }
+
+    // Mints NFTs in bulk for future delivery
+    // Gets an event object with all the info
+    // Optional quantity if minting less than max
+    // Returns list of NFTs minted or list of tickets
+    async bulkMintNFT(event, qty, nowait=false){
+        if(!qty){ qty = event.quantity } // If no quantity mint them all
+        console.log(`Minting ${qty} NFTs for event ${event.eventid}`)
+        let list = []
+        let client = null
+        try {
+            let wallet  = xrpl.Wallet.fromSeed(this.minterKey)
+            let account = wallet.classicAddress
+            client  = new xrpl.Client(config.network)
+            await client.connect()
+            // Get account info
+            let info = await client.request({
+                'command': 'account_info',
+                'account': account
+            })
+            // Create tickets for bulk minting
+            let sequence = info.result.account_data.Sequence
+            let ticketTrx = await client.autofill({
+                'TransactionType': 'TicketCreate',
+                'Account': account,
+                'TicketCount': qty,
+                'Sequence': sequence
+            })
+            let sign = wallet.sign(ticketTrx)
+            let trx  = await client.submitAndWait(sign.tx_blob)
+            // Request account tickets
+            let resp = await client.request({
+                'command': 'account_objects',
+                'account': account,
+                'type':    'ticket'
+            })
+            let tickets = []
+            for (let i=0; i < qty; i++) {
+                tickets.push(resp.result.account_objects[i].TicketSequence)
+            }
+            tickets = tickets.sort()
+            let hexUri = xrpl.convertStringToHex(event.uri)
+            let taxon  = parseInt(event.eventid)
+            let memos  = Utils.parseMemo(event)
+            // Mint NFTs with tickets
+            for (let i=0; i<qty; i++) {
+                console.log('NFT #', i+1)
+                let blob = {
+                    'TransactionType': 'NFTokenMint',
+                    'Account': account,
+                    'URI': hexUri,
+                    'Flags': 11,  // burnable, resellable, transferable
+                    'Fee': '12',  // drops per tx
+                    'Sequence': 0,
+                    'TicketSequence': tickets[i],
+                    'LastLedgerSequence': null,
+                    'NFTokenTaxon': taxon,
+                    'Memos': memos
+                }
+                if(nowait){
+                    let data = client.submit(blob,{wallet})
+                    console.log('Ticket #', tickets[i])
+                    list.push(tickets[i])
+                } else {
+                    let data = await client.submitAndWait(blob,{wallet})
+                    console.log('Ticket #', tickets[i], data?.result?.meta?.TransactionResult)
+                    if(data?.result?.meta?.TransactionResult=='tesSUCCESS'){
+                        let tokenId = Utils.parseTokenId(data)
+                        console.log('TokenId:', tokenId)
+                        list.push(tokenId)
+                    }
+                }
+            }
+        } catch(ex) {
+            console.error(ex)
+            throw ex.message
+        } finally {
+            client?.disconnect()
+        }
+        console.log(nowait?'Tickets':'Tokens:', list)
+        return list
+    }
+
+    // Transfers NFT to new owner
+    // Creates sell offer with price = 0
+    // Destin account must accept sell offer
+    async claimNFT(tokenId, destin){
+        console.log('Claiming NFT...')
+        let offerId = null
+        let client  = null
+        try {
+            let wallet = xrpl.Wallet.fromSeed(this.minterKey)
+            client = new xrpl.Client(config.network)
+            await client.connect()
+            let tx = {
+                TransactionType: 'NFTokenCreateOffer',
+                Account:         wallet.classicAddress,
+                NFTokenID:       tokenId,
+                Destination:     destin,
+                Amount:          '0',
+                Flags:           1  // sell offer
+            }
+            let info = await client.submitAndWait(tx, {wallet})
+            console.log('Result:', info?.result?.meta?.TransactionResult)
+            if(info?.result?.meta?.TransactionResult=='tesSUCCESS'){
+                offerId = Utils.getOfferId(info)
+                console.log('OfferId', offerId)
+            }
+        } catch(ex) {
+            console.error(ex)
+            throw ex.message
+        } finally {
+            client?.disconnect()
+        }
+        return offerId
+    }
+
+    // Verifies NFT belongs to account
+    // Provides tx signature and gets signer
+    // If signer matches NFT owner then is valid
+    async verifyNFT(account, tokenId, signature){
+        console.log('Verifying NFT', tokenId)
+        console.log('Belongs to', account)
+        try {
+            let token = await Utils.getToken(account, tokenId)
+            if(!token){ return false }
+            let result = verify(signature)
+            console.log('Signature', result)
+            if(result.signatureValid && result.signedBy == token.Issuer){
+                return true
+            }
+        } catch(ex) {
+            console.error(ex)
+            throw ex.message
+        }
+        return false
+    }
+
+    // Lookups all accounts that own an NFT
+    // EventId (token taxon) must be provided
+    // Returns a list of accounts
+    async lookupNFT(eventId){
+        console.log('Looking up NFTs...')
+        let list = []
+        // TODO: STAGE 2 Get all tokens with the same taxon
+        return list
+    }
+}
+
+class Utils{
+
+    // Gets account info of provided address
+    // If not found returns null
+    // If error returns error message
+    static async getAccountInfo(account, client){
+        let close = false
+        try {
+            if(!client){
+                close = true
+                client = new xrpl.Client(config.network)
+                await client.connect()
+            }
+            let info = await client.request({
+                'command': 'account_info',
+                'account': account
+            })
+            return info
+        } catch(ex) {
+            console.error(ex)
+            return {error:ex.message}
+        } finally {
+            if(close && client){ client.disconnect() }
+        }
+    }
+
+    // Used to get transaction info including token ID
+    // Just pass the transaction hash
+    // If not found will return null
+    // If error in the process will return error object
+    static async getTransaction(txid){
+        let result = null
+        try {
+            let opt = {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({method: 'tx', params: [{transaction: txid, binary: false}]})
+            }
+            let res = await fetch(config.netrpc, opt)
+            let inf = await res.json()
+            return inf
+        } catch(ex) {
+            console.error(ex)
+            return {error:ex.message}
+        }
+    }
+
+    // After minting a token, parses the response to get the token ID
+    // Loops all affected nodes looking for a token in final not in previous
+    // If a node is found, that's the token ID freshly minted
+    static parseTokenId(info){
+        let found = null
+        for (var i=0; i<info.result.meta.AffectedNodes.length; i++) {
+            let node = info.result.meta.AffectedNodes[i]
+            if(node.ModifiedNode && node.ModifiedNode.LedgerEntryType=='NFTokenPage'){
+                let m = node.ModifiedNode.FinalFields.NFTokens.length
+                let n = node.ModifiedNode.PreviousFields.NFTokens.length
+                for (var j=0; j<m; j++) {
+                    let tokenId = node.ModifiedNode.FinalFields.NFTokens[j].NFToken.NFTokenID
+                    found = tokenId
+                    for (var k=0; k<n; k++) {
+                        if(tokenId==node.ModifiedNode.PreviousFields.NFTokens[k].NFToken.NFTokenID){
+                            found = null
+                            break
+                        }
+                    }
+                    if(found){ break }
+                }
+            }
+            if(found){ break }
+        }
+        return found
+    }
+    
+    // Returns token if found in account's token list
+    // Needs account owner and tokenID
+    // Checks result for null or error when not found
+    // Else result is token found
+    static async getToken(account, tokenId, client){
+        let found = null
+        let close = false
+        try {
+            if(!client){
+                close = true
+                client = new xrpl.Client(config.network)
+                await client.connect()
+            }
+            let nfts = await client.request({
+                method: 'account_nfts',
+                account: account,
+                limit: 400
+            })
+            for (var i = 0; i < nfts.result.account_nfts.length; i++) {
+                if(nfts.result.account_nfts[i].NFTokenID == tokenId){
+                    found = nfts.result.account_nfts[i]
+                    break;
+                }
+            }
+            while(!found && nfts.result.marker){
+                nfts = await client.request({
+                    method: 'account_nfts',
+                    account: account,
+                    limit: 400,
+                    marker: nfts.result.marker
+                })
+                for (var i = 0; i < nfts.result.account_nfts.length; i++) {
+                    if(nfts.result.account_nfts[i].NFTokenID == tokenId){
+                        found = item
+                        break;
+                    }
+                }
+            }
+        } catch(ex) {
+            console.error(ex)
+        } finally {
+            if(close && client){ client.disconnect() }
+        }
+        return found
+    }
+
+    // Get the offerId after new sell/buy offer
+    // Takes transaction response as input
+    // Loop affected nodes and check for entry NFTokenOffer
+    static getOfferId(info){
+        for (var i = 0; i < info.result.meta.AffectedNodes.length; i++) {
+            let node = info.result.meta.AffectedNodes[i]
+            if(node.CreatedNode && node.CreatedNode.LedgerEntryType=='NFTokenOffer') { return node.CreatedNode.LedgerIndex }
+        }
+    }
+
+    // Used to include event info as Memo in a token
+    // Given an object it will loop for key:value pairs
+    // Key:value pairs will be converted to hex as defined in Memo specs
+    // Returns an array of Memo objects with MemoType:MemoData elements
+    static parseMemo(obj){
+        let res = []
+        for(var key in obj){
+            if(!obj[key]){ continue; }
+            let typ = xrpl.convertStringToHex(key)
+            let dat = xrpl.convertStringToHex(obj[key].toString())
+            if(dat){
+                res.push({Memo:{MemoType:typ, MemoData:dat}})
+            }
+        }
+        return res;
+    }
+
+}
+
+module.exports = Kollek
+
+
+// END
