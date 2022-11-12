@@ -7,7 +7,7 @@ For the UI source check https://github.com/kuyawa/kollek
 
 ## Instructions
 
-Clone the repo and install all the modules first
+Clone the repo and install all the packages first
 
 ```
 > npm install
@@ -24,7 +24,7 @@ If you want to run tests, add your wallet key to env vars
 
 ## Methods
 
-Include kollek-api.js in your project
+Include kollek-api.js in your project (npm package in the works)
 
 ```js
 const Kollek = require('./kollek-api.js')
