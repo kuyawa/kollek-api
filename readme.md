@@ -96,7 +96,7 @@ console.log('Accounts', list)
 
 Check the source of [kollek-api](https://github.com/kuyawa/kollek-api/blob/main/kollek-api.js)
 
-TODO:
+## TODO:
 
 - [x] Stage #1 COMPLETED Minting and distribution
 - [ ] Stage #2 PENDING Attendees lookup
