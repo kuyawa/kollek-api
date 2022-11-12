@@ -9,14 +9,18 @@ For the UI source check https://github.com/kuyawa/kollek
 
 Clone the repo and install all the modules first
 
-`> npm install`
+```
+> npm install
+```
 
 ## Testing
 
 If you want to run tests, add your wallet key to env vars
 
-`> export MINTERKEY=sYOURKEY123456789`
-`> npm test`
+```
+> export MINTERKEY=sYOURKEY123456789
+> npm test
+```
 
 ## Methods
 
