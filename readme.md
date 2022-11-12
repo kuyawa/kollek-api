@@ -22,15 +22,19 @@ If you want to run tests, add your wallet key to env vars
 
 Include kollek-api.js in your project
 
-`const Kollek = require('./kollek-api.js')`
+```js
+const Kollek = require('./kollek-api.js')
+```
 
 Initialize Kollek with your private key
 
-`const kollek = new Kollek(process.env.MINTERKEY)`
+```js
+const kollek = new Kollek(process.env.MINTERKEY)
+```
 
 ### Mint an event
 
-```
+```js
 let event = {
 	eventid: 12345678,
 	name: 'Soccer Game',
@@ -53,36 +57,35 @@ console.log('TokenId:', tokenId)
 
 ### Mint an NFT for an account, destin must set NFTokenMinter
 
-```
+```js
 let tokenId = await kollek.mintNFT(event, account)
 console.log('TokenId:', tokenId)
 ```
 
 ### Bulk mint NFTs
 
-```
+```js
 let tokens = await kollek.bulkMintNFT(event, 10)
 console.log('Tokens:', tokens)
 ```
 
 ### Claim an NFT creating a sell offer, account must accept sell offer
 
-```
+```js
 let claim = await kollek.claimNFT(tokenId, account)
 console.log('Claim:', claim)
-
 ```
 
 ### Verify NFT belongs to account based on signature
 
-```
+```js
 let isValid = await kollek.verifyNFT(account, tokenId, signature)
 console.log('Valid:', isValid)
 ```
 
 ### Lookup accounts that have the same event NFT
 
-```
+```js
 let list = await kollek.lookupNFT(eventId)
 console.log('Accounts', list)
 ```
