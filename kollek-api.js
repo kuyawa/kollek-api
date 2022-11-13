@@ -250,7 +250,7 @@ class Utils{
             return inf
         } catch(ex) {
             console.error(ex)
-            return {error:ex.message}
+            throw ex.message
         }
     }
 

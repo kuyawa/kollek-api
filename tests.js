@@ -3,47 +3,47 @@ let Kollek = require('./api.js')
 let kollek = new Kollek(process.env.MINTERKEY)
 
 function preTest(source){
-	if(!process.env.MINTERKEY){
-		console.log('MINTERKEY env var is required')
-		console.log('For minter key use the private key of your account with some funds')
-		process.exit(0);
-	}
+    if(!process.env.MINTERKEY){
+        console.log('MINTERKEY env var is required')
+        console.log('For minter key use the private key of your account with some funds')
+        process.exit(0);
+    }
 }
 
 function startTest(source){
-	let now = new Date()
-	console.log(now,source)
-	return now
+    let now = new Date()
+    console.log(now,source)
+    return now
 }
 
 function endTest(timer){
-	let lapse = new Date() - timer
-	console.log('End',lapse, 'millisecs\n')
+    let lapse = new Date() - timer
+    console.log('End',lapse, 'millisecs\n')
 }
 
 function assert(cond, msg){
-	if(!cond){ console.error('> Error:', msg) }
+    if(!cond){ console.error('> Error:', msg) }
 }
 
 function random8(){
-	return parseInt(Math.random()*90000000)+10000000
+    return parseInt(Math.random()*90000000)+10000000
 }
 
 // Test Data
 let testEvent = {
-	eventid: 12345678,
-	name: 'Soccer Game',
-	info: 'Titans vs Olympics',
-	description: 'Match of the week between rival high schools in Miami',
-	startdate: '2022-11-20 17:30',
-	enddate: null,
-	expiry: null,
-	isvirtual: false,
-	location: 'Olympic Heights, Miami FL',
-	website: 'http://kuyawa.net',
-	uri: 'https://ipfs.io/ipfs/bafybeibzetds44cuulfcgkoj2c4hopypewzpk7bpb2kzbavrpoarko2lby/kuyawa.jpg',
-	quantity: 1000,
-	private: false
+    eventid: 12345678,
+    name: 'Soccer Game',
+    info: 'Titans vs Olympics',
+    description: 'Match of the week between rival high schools in Miami',
+    startdate: '2022-11-20 17:30',
+    enddate: null,
+    expiry: null,
+    isvirtual: false,
+    location: 'Olympic Heights, Miami FL',
+    website: 'http://kuyawa.net',
+    uri: 'https://ipfs.io/ipfs/bafybeibzetds44cuulfcgkoj2c4hopypewzpk7bpb2kzbavrpoarko2lby/kuyawa.jpg',
+    quantity: 1000,
+    private: false
 }
 
 let testMinterKey = process.env.MINTERKEY
@@ -55,60 +55,60 @@ let testSignature = '1200037321EDBDBA1129A32C472C00ECB16DE65718A31D2A57B613DF5C1
 
 // Tests
 async function testMintEvent(event){
-	let timer = startTest(arguments.callee.name)
-	let tokenId = await kollek.mintNFT(event)
+    let timer = startTest(arguments.callee.name)
+    let tokenId = await kollek.mintNFT(event)
     console.log('TokenId:', tokenId)
-	assert(tokenId!=null, 'Minting event failed')
-	endTest(timer)
+    assert(tokenId!=null, 'Minting event failed')
+    endTest(timer)
 }
 
 async function testMintNFT(event, account){
-	let timer = startTest(arguments.callee.name)
-	let tokenId = await kollek.mintNFT(event, account)
+    let timer = startTest(arguments.callee.name)
+    let tokenId = await kollek.mintNFT(event, account)
     console.log('TokenId:', tokenId)
-	assert(tokenId!=null, 'Minting NFT failed')
-	endTest(timer)
+    assert(tokenId!=null, 'Minting NFT failed')
+    endTest(timer)
 }
 
 async function testBulkMintNFT(event, qty){
-	let timer = startTest(arguments.callee.name)
-	let list = await kollek.bulkMintNFT(event, qty)
+    let timer = startTest(arguments.callee.name)
+    let list = await kollek.bulkMintNFT(event, qty)
     console.log('Tokens:', list)
-	assert(list?.length==qty, 'Bulk mint failed')
-	endTest(timer)
+    assert(list?.length==qty, 'Bulk mint failed')
+    endTest(timer)
 }
 
 async function testClaimNFT(tokenId, account){
-	let timer = startTest(arguments.callee.name)
-	let claim = await kollek.claimNFT(tokenId, account)
+    let timer = startTest(arguments.callee.name)
+    let claim = await kollek.claimNFT(tokenId, account)
     console.log('Claimed:', claim)
-	assert(claim!=null, 'Token could not be claimed')
-	endTest(timer)
+    assert(claim!=null, 'Token could not be claimed')
+    endTest(timer)
 }
 
 async function testVerifyNFT(account, tokenId, signature){
-	let timer = startTest(arguments.callee.name)
-	let isValid = await kollek.verifyNFT(account, tokenId, signature)
+    let timer = startTest(arguments.callee.name)
+    let isValid = await kollek.verifyNFT(account, tokenId, signature)
     console.log('Valid:', isValid)
-	assert(isValid, 'Token is not valid')
-	endTest(timer)
+    assert(isValid, 'Token is not valid')
+    endTest(timer)
 }
 
 async function testLookupNFT(eventId){
-	let timer = startTest(arguments.callee.name)
-	let list = await kollek.lookupNFT(eventId)
-	console.log('Accounts', list)
-	endTest(timer)
+    let timer = startTest(arguments.callee.name)
+    let list = await kollek.lookupNFT(eventId)
+    console.log('Accounts', list)
+    endTest(timer)
 }
 
 async function runAllTests(){
-	preTest()
-	await testMintEvent(testEvent)
-	await testMintNFT(testEvent, testAccount)
-	await testBulkMintNFT(testEvent, 2)
-	await testClaimNFT(testTokenId, testAccount)
-	await testVerifyNFT(testAccount, testTokenId, testSignature)
-	await testLookupNFT(testEvent.eventid)
+    preTest()
+    await testMintEvent(testEvent)
+    await testMintNFT(testEvent, testAccount)
+    await testBulkMintNFT(testEvent, 2)
+    await testClaimNFT(testTokenId, testAccount)
+    await testVerifyNFT(testAccount, testTokenId, testSignature)
+    await testLookupNFT(testEvent.eventid)
 }
 
 runAllTests()
