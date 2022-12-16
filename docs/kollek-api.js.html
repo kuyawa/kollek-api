@@ -1,4 +1,32 @@
-const fetch  = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: kollek-api.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: kollek-api.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const fetch  = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const xrpl   = require('xrpl')
 const verify = require('verify-xrpl-signature').verifySignature
 
@@ -117,7 +145,7 @@ class Kollek {
                 'type':    'ticket'
             })
             let tickets = []
-            for (let i=0; i < qty; i++) {
+            for (let i=0; i &lt; qty; i++) {
                 tickets.push(resp.result.account_objects[i].TicketSequence)
             }
             tickets = tickets.sort()
@@ -125,7 +153,7 @@ class Kollek {
             let taxon  = parseInt(event.eventid)
             let memos  = Utils.parseMemo(event)
             // Mint NFTs with tickets
-            for (let i=0; i<qty; i++) {
+            for (let i=0; i&lt;qty; i++) {
                 console.log('NFT #', i+1)
                 let blob = {
                     'TransactionType': 'NFTokenMint',
@@ -223,7 +251,7 @@ class Kollek {
             if(!token){ return false }
             let result = verify(signature)
             console.log('Signature', result)
-            if(result.signatureValid && result.signedBy == token.Issuer){
+            if(result.signatureValid &amp;&amp; result.signedBy == token.Issuer){
                 return true
             }
         } catch(ex) {
@@ -282,7 +310,7 @@ class Utils{
             console.error(ex)
             return {error:ex.message}
         } finally {
-            if(close && client){ client.disconnect() }
+            if(close &amp;&amp; client){ client.disconnect() }
         }
     }
 
@@ -323,15 +351,15 @@ class Utils{
      */
     static parseTokenId(info){
         let found = null
-        for (var i=0; i<info.result.meta.AffectedNodes.length; i++) {
+        for (var i=0; i&lt;info.result.meta.AffectedNodes.length; i++) {
             let node = info.result.meta.AffectedNodes[i]
-            if(node.ModifiedNode && node.ModifiedNode.LedgerEntryType=='NFTokenPage'){
+            if(node.ModifiedNode &amp;&amp; node.ModifiedNode.LedgerEntryType=='NFTokenPage'){
                 let m = node.ModifiedNode.FinalFields.NFTokens.length
                 let n = node.ModifiedNode.PreviousFields.NFTokens.length
-                for (var j=0; j<m; j++) {
+                for (var j=0; j&lt;m; j++) {
                     let tokenId = node.ModifiedNode.FinalFields.NFTokens[j].NFToken.NFTokenID
                     found = tokenId
-                    for (var k=0; k<n; k++) {
+                    for (var k=0; k&lt;n; k++) {
                         if(tokenId==node.ModifiedNode.PreviousFields.NFTokens[k].NFToken.NFTokenID){
                             found = null
                             break
@@ -370,20 +398,20 @@ class Utils{
                 account: account,
                 limit: 400
             })
-            for (var i = 0; i < nfts.result.account_nfts.length; i++) {
+            for (var i = 0; i &lt; nfts.result.account_nfts.length; i++) {
                 if(nfts.result.account_nfts[i].NFTokenID == tokenId){
                     found = nfts.result.account_nfts[i]
                     break;
                 }
             }
-            while(!found && nfts.result.marker){
+            while(!found &amp;&amp; nfts.result.marker){
                 nfts = await client.request({
                     method: 'account_nfts',
                     account: account,
                     limit: 400,
                     marker: nfts.result.marker
                 })
-                for (var i = 0; i < nfts.result.account_nfts.length; i++) {
+                for (var i = 0; i &lt; nfts.result.account_nfts.length; i++) {
                     if(nfts.result.account_nfts[i].NFTokenID == tokenId){
                         found = item
                         break;
@@ -393,7 +421,7 @@ class Utils{
         } catch(ex) {
             console.error(ex)
         } finally {
-            if(close && client){ client.disconnect() }
+            if(close &amp;&amp; client){ client.disconnect() }
         }
         return found
     }
@@ -407,9 +435,9 @@ class Utils{
      * @returns {string} Offer Id
      */
     static getOfferId(info){
-        for (var i = 0; i < info.result.meta.AffectedNodes.length; i++) {
+        for (var i = 0; i &lt; info.result.meta.AffectedNodes.length; i++) {
             let node = info.result.meta.AffectedNodes[i]
-            if(node.CreatedNode && node.CreatedNode.LedgerEntryType=='NFTokenOffer') { return node.CreatedNode.LedgerIndex }
+            if(node.CreatedNode &amp;&amp; node.CreatedNode.LedgerEntryType=='NFTokenOffer') { return node.CreatedNode.LedgerIndex }
         }
     }
 
@@ -439,4 +467,26 @@ class Utils{
 
 module.exports = Kollek
 
-// END
+// END</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Kollek.html">Kollek</a></li><li><a href="Utils.html">Utils</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Fri Dec 16 2022 19:37:11 GMT-0400 (Venezuela Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
